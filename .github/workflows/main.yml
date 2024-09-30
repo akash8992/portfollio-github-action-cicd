@@ -1,4 +1,5 @@
 name: Breadcrumbsportfollio-github-action-cicd
+
 # Trigger the workflow when there is a push to the `main` branch
 on:
   push:
@@ -14,15 +15,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v1
 
-    # Step 2: Install AWS CLI to interact with AWS services
-
-    # - name: Install AWS CLI
-    #   run: |
-    #     sudo apt-get update  # Update the package lists
-    #     sudo apt-get install -y python3-pip  # Install pip (Python package manager)
-    #     pip3 install awscli --upgrade --user  # Install the AWS CLI tool
-
-    # Step 3: Configure AWS credentials using the secrets stored in GitHub
+    # Step 2: Configure AWS credentials using the secrets stored in GitHub
     # AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be stored as secrets in your GitHub repo
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -31,13 +24,13 @@ jobs:
        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
        aws-region: ap-south-1
 
-    # Step 4: Sync the files from the repository to the S3 bucket
+    # Step 3: Sync the files from the repository to the S3 bucket
     # The `--exclude ".git/*"` option excludes Git-related files, and `--acl public-read` makes the files publicly accessible
     - name: Deploy static website to s3bucket
       run: |
-        aws s3 sync . s3://portfollio-github-action-cicd --delete
+        aws s3 sync . s3://portfollio-github-action-cicd --delete --exclude ".git/*" --acl public-read
         
-    # Optional Step 5: Invalidate CloudFront cache to ensure the latest version of files is served
+    # Optional Step 4: Invalidate CloudFront cache to ensure the latest version of files is served
     # Only runs if a CloudFront Distribution ID is provided as a secret
     # - name: Invalidate CloudFront cache (optional)
     #   run: |
