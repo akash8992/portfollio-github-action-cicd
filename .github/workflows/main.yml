@@ -1,0 +1,45 @@
+name: Deploy to S3
+
+# Trigger the workflow when there is a push to the `main` branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # Use the latest Ubuntu environment for the server
+
+    steps:
+    # Step 1: Checkout the code from the GitHub repository
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Step 2: Install AWS CLI to interact with AWS services
+
+    # - name: Install AWS CLI
+    #   run: |
+    #     sudo apt-get update  # Update the package lists
+    #     sudo apt-get install -y python3-pip  # Install pip (Python package manager)
+    #     pip3 install awscli --upgrade --user  # Install the AWS CLI tool
+
+    # Step 3: Configure AWS credentials using the secrets stored in GitHub
+    # AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be stored as secrets in your GitHub repo
+    - name: Configure AWS credentials
+      run: |
+        aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}  # Set AWS access key ID
+        aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}  # Set AWS secret access key
+        aws configure set default.region us-east-1  # Set default region (can be changed as needed)
+
+    # Step 4: Sync the files from the repository to the S3 bucket
+    # The `--exclude ".git/*"` option excludes Git-related files, and `--acl public-read` makes the files publicly accessible
+    - name: Sync files to S3
+      run: |
+        aws s3 sync . s3://portfollio-github-action-cicd --exclude ".git/*" --acl public-read
+
+    # Optional Step 5: Invalidate CloudFront cache to ensure the latest version of files is served
+    # Only runs if a CloudFront Distribution ID is provided as a secret
+    - name: Invalidate CloudFront cache (optional)
+      run: |
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} --paths "/*"
+      if: ${{ secrets.CLOUDFRONT_DIST_ID != '' }}  # Conditional step that runs only if CLOUDFRONT_DIST_ID is provided
